@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>আমাদের পার্সোনাল স্পেস 🌸</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Hind Siliguri & Fredoka -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase Compat SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            font-family: 'Hind Siliguri', 'Fredoka', sans-serif;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F9F6FC;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #E1D5EC;
+            border-radius: 10px;
+        }
+        /* iOS Safe Area Padding Helper */
+        .pb-safe {
+            padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+        }
+        /* Bounce typing animation */
+        @keyframes cuteBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+        .cute-bounce-1 { animation: cuteBounce 0.8s infinite ease-in-out; }
+        .cute-bounce-2 { animation: cuteBounce 0.8s infinite ease-in-out 0.2s; }
+        .cute-bounce-3 { animation: cuteBounce 0.8s infinite ease-in-out 0.4s; }
+    </style>
+</head>
+<body class="bg-[#F6F0F9] text-slate-700 flex flex-col justify-between overflow-hidden relative">
+
+    <!-- Screen 1: Luxury Cute Login -->
+    <div id="setup-screen" class="fixed inset-0 bg-[#F6F0F9] flex items-center justify-center z-50 p-4 transition-all duration-300">
+        <div class="bg-white/80 border-2 border-[#EADDF3] p-7 rounded-[2.5rem] w-full max-w-sm shadow-[0_15px_35px_rgba(230,215,242,0.6)] backdrop-blur-md relative">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-[#F1E6FA] rounded-[1.8rem] flex items-center justify-center mx-auto mb-3 border border-[#DFCEEE]">
+                    <span class="text-3xl">✨</span>
+                </div>
+                <h2 class="text-2xl font-bold text-[#A78BFA] mb-1">আমাদের কর্নার 🌸</h2>
+                <p class="text-xs text-slate-400">আপনার গোপন চ্যাট কোডটি দিন</p>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <input type="password" id="login-code-input" placeholder="কোড লিখুন... (যেমন: rhd বা zrr)" class="w-full bg-white/90 border-2 border-[#EADDF3] focus:border-[#C084FC] rounded-2xl px-4 py-3.5 focus:outline-none text-center text-sm font-semibold placeholder:text-slate-300 transition">
+                </div>
+                <p id="login-error" class="hidden text-xs text-rose-500 font-semibold text-center"><i class="fa-solid fa-circle-exclamation mr-1"></i> ভুল কোড! আবার চেষ্টা করুন 🌸</p>
+                <button type="submit" class="w-full py-3.5 bg-[#A78BFA] hover:bg-[#8B5CF6] text-white font-bold rounded-2xl shadow-md transition duration-200 active:scale-95 text-sm">
+                    প্রবেশ করুন 💖
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Screen 2: Responsive Chat Interface -->
+    <!-- Header -->
+    <header class="bg-white/90 border-b border-[#EADDF3] px-4 py-3 flex justify-between items-center shrink-0 shadow-xs z-10">
+        <div class="flex items-center space-x-3">
+            <div class="relative">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#C084FC] to-[#E9D5FF] flex items-center justify-center text-xl shadow-md border-2 border-white" id="other-user-avatar">❓</div>
+                <div id="status-indicator-dot" class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-slate-400 rounded-full border-2 border-white transition-colors duration-300"></div>
+            </div>
+            <div>
+                <h1 class="font-bold text-[#8B5CF6] text-sm sm:text-base leading-tight" id="other-user-name">অন্য ইউজার</h1>
+                <p class="text-[10px] text-slate-400 font-medium mt-0.5" id="other-user-status">অফলাইন</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2">
+            <span id="current-user-badge" class="text-[10px] px-3 py-1.5 rounded-full bg-[#F3E8FF] text-[#8B5CF6] border border-[#E9D5FF] font-bold"></span>
+            <button onclick="logout()" class="w-8 h-8 flex items-center justify-center bg-white border border-[#EADDF3] text-slate-400 hover:text-red-400 rounded-xl transition shadow-xs active:scale-90">
+                <i class="fa-solid fa-right-from-bracket text-xs"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Chat Messages Frame -->
+    <main id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-4 bg-[#F6F0F9]/40 flex flex-col">
+        <!-- Message lists are rendered here -->
+    </main>
+
+    <!-- Typing Indicator Banner -->
+    <div id="typing-indicator" class="hidden px-4 py-2 bg-white/80 text-xs text-[#8B5CF6] flex items-center space-x-2 border-t border-[#EADDF3]/50 shrink-0">
+        <span id="typing-text" class="italic font-semibold">অন্য ইউজার লিখছেন...</span>
+        <div class="flex space-x-1 items-center h-2">
+            <div class="w-1 h-1 bg-[#8B5CF6] rounded-full cute-bounce-1"></div>
+            <div class="w-1 h-1 bg-[#8B5CF6] rounded-full cute-bounce-2"></div>
+            <div class="w-1 h-1 bg-[#8B5CF6] rounded-full cute-bounce-3"></div>
+        </div>
+    </div>
+
+    <!-- Reply Mode Active Indicator Banner -->
+    <div id="reply-banner" class="hidden px-4 py-2.5 bg-purple-50 border-t border-[#EADDF3] text-xs text-[#8B5CF6] flex justify-between items-center shrink-0">
+        <div class="flex flex-col truncate pr-4">
+            <span class="font-bold text-[#8B5CF6]" id="reply-banner-sender"></span>
+            <span class="text-slate-500 truncate text-[11px]" id="reply-banner-text"></span>
+        </div>
+        <button onclick="cancelReplyMode()" class="text-rose-500 hover:text-rose-700 font-bold px-2.5 py-1 text-[10px] border border-rose-200 rounded-lg bg-white shadow-xs shrink-0 active:scale-95 transition">বাতিল</button>
+    </div>
+
+    <!-- Edit Mode Active Indicator Banner -->
+    <div id="edit-banner" class="hidden px-4 py-2.5 bg-amber-50 border-t border-amber-200 text-xs text-amber-700 flex justify-between items-center shrink-0">
+        <span class="font-medium"><i class="fa-solid fa-pen mr-1"></i> বার্তাটি সম্পাদনা করা হচ্ছে...</span>
+        <button onclick="cancelEditMode()" class="text-amber-500 hover:text-amber-800 font-bold px-2 py-0.5 border border-amber-300 rounded-lg">বাতিল</button>
+    </div>
+
+    <!-- Chat Input Frame -->
+    <footer class="p-3 bg-white border-t border-[#EADDF3] shrink-0 pb-safe">
+        <form id="message-form" class="flex items-end space-x-2 max-w-4xl mx-auto" onsubmit="handleSend(event)">
+            <div class="flex-1 relative flex items-center">
+                <textarea id="message-input" oninput="handleTyping()" rows="1" placeholder="মেসেজ লিখুন..." class="w-full bg-[#FDFBFE] text-slate-700 border border-[#EADDF3] focus:border-[#C084FC] rounded-2xl px-4 py-3 pr-10 focus:outline-none placeholder-slate-400 transition text-sm font-medium shadow-inner resize-none max-h-32 overflow-y-auto"></textarea>
+            </div>
+            <button type="submit" class="bg-[#C084FC] hover:bg-[#A78BFA] text-white w-11 h-11 rounded-2xl flex items-center justify-center transition shadow-md active:scale-90 hover:scale-105 shrink-0 border border-white">
+                <i class="fa-solid fa-paper-plane text-sm"></i>
+            </button>
+        </form>
+    </footer>
+
+    <!-- Interactive Message Options Bottom Sheet -->
+    <div id="bottom-sheet" class="fixed inset-0 bg-slate-950/40 z-50 backdrop-blur-xs flex items-end justify-center transition-opacity duration-300 opacity-0 pointer-events-none" onclick="closeBottomSheet()">
+        <div class="bg-white rounded-t-[2rem] w-full max-w-md p-6 pb-8 shadow-2xl transition-transform duration-300 transform translate-y-full" onclick="event.stopPropagation()">
+            <!-- Drag Handle indicator -->
+            <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6"></div>
+            
+            <h3 class="text-center font-bold text-slate-700 text-sm mb-5">বার্তা অপশন</h3>
+            
+            <div class="space-y-3">
+                <button onclick="enableReplyMode()" class="w-full py-3.5 px-4 bg-slate-50 hover:bg-slate-100/80 active:scale-99 rounded-2xl text-left text-sm font-semibold text-slate-700 transition flex items-center space-x-3">
+                    <i class="fa-solid fa-reply text-purple-500 text-base"></i>
+                    <span>উত্তর দিন (Reply)</span>
+                </button>
+                
+                <button id="btn-edit-msg" onclick="enableEditMode()" class="hidden w-full py-3.5 px-4 bg-slate-50 hover:bg-slate-100/80 active:scale-99 rounded-2xl text-left text-sm font-semibold text-slate-700 transition flex items-center space-x-3">
+                    <i class="fa-regular fa-pen-to-square text-amber-500 text-base"></i>
+                    <span>বার্তা সম্পাদনা করুন (৩ মি. মধ্যে)</span>
+                </button>
+                
+                <button id="btn-delete-everyone" onclick="deleteForEveryone()" class="hidden w-full py-3.5 px-4 bg-rose-50 hover:bg-rose-100/80 active:scale-99 rounded-2xl text-left text-sm font-semibold text-rose-600 transition flex items-center space-x-3">
+                    <i class="fa-regular fa-trash-can text-rose-500 text-base"></i>
+                    <span>সবার জন্য ডিলিট করুন (৩ মি. মধ্যে)</span>
+                </button>
+                
+                <button onclick="deleteForMe()" class="w-full py-3.5 px-4 bg-slate-50 hover:bg-slate-100/80 active:scale-99 rounded-2xl text-left text-sm font-semibold text-slate-700 transition flex items-center space-x-3">
+                    <i class="fa-regular fa-eye-slash text-slate-500 text-base"></i>
+                    <span>আমার জন্য ডিলিট করুন</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Block -->
+    <script>
+        // --- Firebase Config ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyCPMTkW0p0vY7nal1YSvnd4soRdD_1cPD0",
+          authDomain: "zara-10fe1.firebaseapp.com",
+          databaseURL: "https://zara-10fe1-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "zara-10fe1",
+          storageBucket: "zara-10fe1.firebasestorage.app",
+          messagingSenderId: "788603336272",
+          appId: "1:788603336272:web:fe8ca574633eee8f748355",
+          measurementId: "G-ZD7D4J767P"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let currentUser = null;
+        let otherUser = null;
+        let selectedMessageId = null;
+        let selectedMessageText = "";
+        let selectedMessageTimestamp = null;
+        let selectedMessageSender = "";
+        let editModeActive = false;
+        let editingMessageId = null;
+        let typingTimeout = null;
+        let isCurrentlyTypingInDB = false; // Prevents spamming FB with keypresses
+        let messagesQuery = null; 
+        let isFirstLoad = true;
+        let isLoadingMore = false;
+        let hasMoreMessages = true;
+
+        // Reply mode status tracking
+        let replyModeActive = false;
+        let replyingToMessageId = null;
+        let replyingToSender = null;
+        let replyingToText = null;
+
+        // Message Pagination limit count
+        let limitCount = 40;
+
+        // Auto-sizing dynamic textarea height
+        const txInput = document.getElementById('message-input');
+        txInput.addEventListener("input", function() {
+            this.style.height = "auto";
+            this.style.height = (this.scrollHeight) + "px";
+        });
+
+        // Scroll to bottom on Focus (Mobile Viewport Optimization)
+        txInput.addEventListener("focus", function() {
+            setTimeout(scrollToBottom, 250);
+        });
+
+        // --- Visual Viewport Keyboard Fix (Keeps Header & Input Locked) ---
+        function adjustViewportHeight() {
+            if (window.visualViewport) {
+                document.body.style.height = window.visualViewport.height + "px";
+            } else {
+                document.body.style.height = "100dvh";
+            }
+            scrollToBottom();
+        }
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', adjustViewportHeight);
+            window.visualViewport.addEventListener('scroll', adjustViewportHeight);
+        }
+        window.addEventListener('resize', adjustViewportHeight);
+
+        // --- Clean Stale Listeners on Login/Logout ---
+        function cleanupListeners() {
+            if (messagesQuery) {
+                messagesQuery.off();
+                messagesQuery = null;
+            }
+            if (otherUser) {
+                db.ref('typing/' + otherUser).off();
+                db.ref('status/' + otherUser).off();
+            }
+            if (currentUser) {
+                db.ref('status/' + currentUser).off();
+                db.ref('typing/' + currentUser).off();
+            }
+            db.ref('messages').off();
+            db.ref('.info/connected').off();
+        }
+
+        // --- Authentication Flow ---
+        function handleLogin(event) {
+            event.preventDefault();
+            const inputVal = document.getElementById('login-code-input').value.trim();
+            const errorText = document.getElementById('login-error');
+
+            cleanupListeners(); // Dynamic cleanup before session starts
+
+            if (inputVal === 'rhd') {
+                currentUser = "Rihad";
+                otherUser = "Zara";
+            } else if (inputVal === 'zrr') {
+                currentUser = "Zara";
+                otherUser = "Rihad";
+            } else {
+                errorText.classList.remove('hidden');
+                return;
+            }
+
+            errorText.classList.add('hidden');
+            document.getElementById('setup-screen').classList.add('opacity-0', 'pointer-events-none');
+            
+            document.getElementById('current-user-badge').innerText = currentUser === 'Rihad' ? '🐰 Rihad' : '🐱 Zara';
+            document.getElementById('other-user-name').innerText = otherUser;
+            document.getElementById('other-user-avatar').innerText = otherUser === 'Rihad' ? '🐰' : '🐱';
+
+            isFirstLoad = true;
+            isLoadingMore = false;
+            hasMoreMessages = true;
+            cancelReplyMode();
+
+            adjustViewportHeight();
+            initChat();
+            attachScrollListener();
+        }
+
+        function initChat() {
+            setupPresence();
+            listenToMessages();
+            listenToTyping();
+        }
+
+        // --- Realtime Presence (Online/Last Seen Feature) ---
+        function setupPresence() {
+            const statusRef = db.ref('status/' + currentUser);
+            
+            db.ref('.info/connected').on('value', snapshot => {
+                if (snapshot.val() === true) {
+                    statusRef.set({ online: true, last_active: firebase.database.ServerValue.TIMESTAMP });
+                    statusRef.onDisconnect().set({ online: false, last_active: firebase.database.ServerValue.TIMESTAMP });
+                    db.ref('typing/' + currentUser).onDisconnect().remove();
+                }
+            });
+
+            db.ref('status/' + otherUser).on('value', snapshot => {
+                const statusText = document.getElementById('other-user-status');
+                const dot = document.getElementById('status-indicator-dot');
+                
+                if (snapshot.exists()) {
+                    const status = snapshot.val();
+                    if (status.online) {
+                        statusText.innerText = "অনলাইন 🟢";
+                        dot.className = "absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-white";
+                    } else {
+                        const lastSeenTime = formatLastSeen(status.last_active);
+                        statusText.innerText = `Last seen: ${lastSeenTime}`;
+                        dot.className = "absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-slate-300 rounded-full border-2 border-white";
+                    }
+                } else {
+                    statusText.innerText = "অফলাইন";
+                    dot.className = "absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-slate-300 rounded-full border-2 border-white";
+                }
+            });
+        }
+
+        function formatLastSeen(timestamp) {
+            if (!timestamp) return "অজানা";
+            const date = new Date(timestamp);
+            const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            const msgDate = new Date(timestamp);
+            const today = new Date();
+            const yesterday = new Date();
+            yesterday.setDate(today.getDate() - 1);
+
+            const mReset = new Date(msgDate.getFullYear(), msgDate.getMonth(), msgDate.getDate()).getTime();
+            const tReset = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+            const yReset = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate()).getTime();
+
+            if (mReset === tReset) {
+                return `আজ ${timeStr}`;
+            } else if (mReset === yReset) {
+                return `গতকাল ${timeStr}`;
+            } else {
+                const options = { month: 'long', day: 'numeric' };
+                return `${msgDate.toLocaleDateString('bn-BD', options)} ${timeStr}`;
+            }
+        }
+
+        // --- Live Typing Status Logic ---
+        function handleTyping() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            const isTypingNow = text.length > 0;
+
+            // Update Firebase only when the typing state shifts
+            if (isTypingNow !== isCurrentlyTypingInDB) {
+                isCurrentlyTypingInDB = isTypingNow;
+                db.ref('typing/' + currentUser).set({ typing: isTypingNow });
+            }
+
+            clearTimeout(typingTimeout);
+            if (isTypingNow) {
+                typingTimeout = setTimeout(() => {
+                    isCurrentlyTypingInDB = false;
+                    db.ref('typing/' + currentUser).set({ typing: false });
+                }, 2500);
+            }
+        }
+
+        function listenToTyping() {
+            db.ref('typing/' + otherUser).on('value', snapshot => {
+                const indicator = document.getElementById('typing-indicator');
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    if (data.typing) {
+                        document.getElementById('typing-text').innerText = `${otherUser} লিখছেন`;
+                        indicator.classList.remove('hidden');
+                    } else {
+                        indicator.classList.add('hidden');
+                    }
+                } else {
+                    indicator.classList.add('hidden');
+                }
+            });
+        }
+
+        // --- Realtime Messaging Logic, Cached UI & No Duplication ---
+        function listenToMessages() {
+            const chatBox = document.getElementById('chat-box');
+
+            // Load from Local Cache instantly to bypass connect latency
+            const cacheKey = `rtdb_chat_cache_${currentUser}`;
+            const cachedData = localStorage.getItem(cacheKey);
+            
+            if (cachedData && chatBox.children.length <= 1) {
+                try {
+                    renderSnapshot(JSON.parse(cachedData), true);
+                } catch (e) {
+                    console.error("Cache parsing error", e);
+                    localStorage.removeItem(cacheKey);
+                }
+            } else if (chatBox.children.length === 0) {
+                chatBox.innerHTML = '<div class="text-center text-xs text-slate-400 py-4">কানেক্ট হচ্ছে... 🧸</div>';
+            }
+
+            // [Duplication Solution]: Fully detach parent reference & query listeners
+            if (messagesQuery) {
+                messagesQuery.off();
+            }
+            db.ref('messages').off();
+
+            messagesQuery = db.ref('messages').limitToLast(limitCount);
+
+            messagesQuery.on('value', snapshot => {
+                const messagesList = [];
+                snapshot.forEach(childSnapshot => {
+                    messagesList.push({
+                        id: childSnapshot.key,
+                        ...childSnapshot.val()
+                    });
+                });
+
+                // Cache fresh snapshots in LocalStorage
+                localStorage.setItem(cacheKey, JSON.stringify(messagesList));
+
+                // Process and Render Fresh Snapshot
+                renderSnapshot(messagesList, false);
+            });
+        }
+
+        function renderSnapshot(messagesList, isCache = false) {
+            const chatBox = document.getElementById('chat-box');
+            
+            // Track height for preserving scroll on "load more"
+            const oldScrollHeight = chatBox.scrollHeight;
+            
+            chatBox.innerHTML = '';
+            let lastDateHeader = "";
+            const localDeleted = JSON.parse(localStorage.getItem(`deleted_${currentUser}`) || '[]');
+            const loadedCount = messagesList.length;
+
+            // Update lazy load availability state
+            if (loadedCount >= limitCount) {
+                hasMoreMessages = true;
+                const loadMoreHTML = `
+                    <div id="load-more-container" class="flex justify-center my-3">
+                        <div class="text-[10px] bg-white/90 text-[#8B5CF6] px-4 py-2 rounded-full font-bold border border-[#E9D5FF] shadow-xs flex items-center space-x-1.5 animate-pulse">
+                            <i class="fa-solid fa-spinner animate-spin"></i>
+                            <span>পুরোনো বার্তা লোড হচ্ছে...</span>
+                        </div>
+                    </div>
+                `;
+                chatBox.insertAdjacentHTML('beforeend', loadMoreHTML);
+            } else {
+                hasMoreMessages = false;
+                const startHTML = `
+                    <div class="text-center text-[10px] text-[#FF8FAB] font-semibold py-1.5 px-4 bg-white/70 rounded-full max-w-xs mx-auto border-2 border-[#FFE5EC] shadow-sm mb-4">
+                        🌸 চ্যাটের শুরু থেকে 🌸
+                    </div>
+                `;
+                chatBox.insertAdjacentHTML('beforeend', startHTML);
+            }
+
+            // Batch Updates Object for Unseen Messages (Fixes cloning)
+            const updates = {};
+
+            messagesList.forEach(data => {
+                const msgId = data.id;
+                if (localDeleted.includes(msgId)) return;
+
+                // Collect unseen message updates for single batch write
+                if (!isCache && data.sender === otherUser && !data.seen) {
+                    updates[`messages/${msgId}/seen`] = true;
+                }
+
+                const currentDateHeader = getGroupDateString(data.timestamp);
+                if (currentDateHeader !== lastDateHeader) {
+                    const dateHeaderHTML = `
+                        <div class="flex justify-center my-3">
+                            <span class="text-[10px] bg-slate-200/50 text-slate-500 px-3 py-1 rounded-full font-semibold border border-slate-300/20">${currentDateHeader}</span>
+                        </div>
+                    `;
+                    chatBox.insertAdjacentHTML('beforeend', dateHeaderHTML);
+                    lastDateHeader = currentDateHeader;
+                }
+
+                appendMessageHTML(msgId, data);
+            });
+
+            // Perform single batch update to prevent multiple render loops (Fixes cloning)
+            if (Object.keys(updates).length > 0) {
+                db.ref().update(updates);
+            }
+
+            // Smart Scroll Control
+            if (isLoadingMore) {
+                setTimeout(() => {
+                    const newScrollHeight = chatBox.scrollHeight;
+                    chatBox.scrollTop = (newScrollHeight - oldScrollHeight);
+                    isLoadingMore = false;
+                }, 50);
+            } else {
+                if (isFirstLoad) {
+                    scrollToBottom();
+                    isFirstLoad = false;
+                } else {
+                    const isNearBottom = (chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop) < 250;
+                    if (isNearBottom) {
+                        scrollToBottom();
+                    }
+                }
+            }
+        }
+
+        // --- Strong Automatic Infinite Lazy Loading Scroll Observer ---
+        let isScrollListenerAttached = false;
+        function attachScrollListener() {
+            if (isScrollListenerAttached) return;
+            const chatBox = document.getElementById('chat-box');
+            if (!chatBox) return;
+
+            chatBox.addEventListener('scroll', () => {
+                // If scrolled near top, and hasMoreMessages is true, trigger auto-load
+                if (chatBox.scrollTop < 80 && !isLoadingMore && hasMoreMessages) {
+                    loadMoreMessages();
+                }
+            });
+            isScrollListenerAttached = true;
+        }
+
+        function loadMoreMessages() {
+            if (isLoadingMore || !hasMoreMessages) return;
+            isLoadingMore = true;
+            limitCount += 20; 
+            listenToMessages();
+        }
+
+        function getGroupDateString(timestamp) {
+            if (!timestamp) return "";
+            const msgDate = new Date(timestamp);
+            const today = new Date();
+            const yesterday = new Date();
+            yesterday.setDate(today.getDate() - 1);
+
+            const mReset = new Date(msgDate.getFullYear(), msgDate.getMonth(), msgDate.getDate()).getTime();
+            const tReset = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+            const yReset = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate()).getTime();
+
+            if (mReset === tReset) {
+                return "আজ";
+            } else if (mReset === yReset) {
+                return "গতকাল";
+            } else {
+                const options = { month: 'long', day: 'numeric' };
+                return msgDate.toLocaleDateString('bn-BD', options);
+            }
+        }
+
+        // --- Upgraded Smooth Scroll-to-Message Jump Action ---
+        function scrollToMessageId(id) {
+            const targetElement = document.getElementById(`msg-${id}`);
+            if (targetElement) {
+                targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Temporary Highlight Glow
+                targetElement.classList.add('ring-2', 'ring-[#C084FC]', 'ring-offset-2', 'scale-102');
+                setTimeout(() => {
+                    targetElement.classList.remove('ring-2', 'ring-[#C084FC]', 'ring-offset-2', 'scale-102');
+                }, 2000);
+            }
+        }
+
+        // --- Upgraded Chat Bubble Layout ---
+        function appendMessageHTML(msgId, msg) {
+            const chatBox = document.getElementById('chat-box');
+            const isMe = msg.sender === currentUser;
+            const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            let seenStatusHTML = '';
+            if (isMe && !msg.deleted) {
+                if (msg.seen) {
+                    seenStatusHTML = `<span class="text-[9px] text-pink-200 font-bold ml-1">💖💖</span>`;
+                } else {
+                    seenStatusHTML = `<span class="text-[9px] text-white/50 ml-1">🤍</span>`;
+                }
+            }
+
+            const formattedText = escapeHTML(msg.text).replace(/\n/g, '<br>');
+
+            // Upgraded Premium Bubble Design (Asymmetrical Border Radius & Standard pb-5 padding for safe-positioning)
+            const bubbleClass = msg.deleted 
+                ? 'bg-slate-100 border border-slate-200 text-slate-400 italic rounded-2xl' 
+                : (isMe 
+                    ? 'bg-gradient-to-tr from-[#9333EA] to-[#C084FC] text-white rounded-[1.2rem] rounded-tr-sm shadow-[0_3px_10px_rgba(147,51,234,0.12)]' 
+                    : 'bg-white border border-[#F3E8FF] text-slate-700 rounded-[1.2rem] rounded-tl-sm shadow-[0_3px_10px_rgba(243,232,255,0.25)]');
+
+            // Sub-Reply design structure inside upgraded bubble
+            let replyBlockHTML = '';
+            if (msg.replyToText && !msg.deleted) {
+                if (isMe) {
+                    replyBlockHTML = `
+                        <div class="mb-2 p-2 bg-white/10 border-l-2 border-pink-200 rounded-lg text-left cursor-pointer transition hover:bg-white/15 select-none" onclick="event.stopPropagation(); scrollToMessageId('${msg.replyToId}')">
+                            <p class="font-bold text-[10px] text-pink-200 flex items-center"><i class="fa-solid fa-reply mr-1.5 text-[8px]"></i>${msg.replyToSender === currentUser ? 'আপনি' : msg.replyToSender}</p>
+                            <p class="truncate text-[10px] text-white/95 font-medium mt-0.5">${escapeHTML(msg.replyToText)}</p>
+                        </div>
+                    `;
+                } else {
+                    replyBlockHTML = `
+                        <div class="mb-2 p-2 bg-[#F9F6FC] border-l-2 border-[#C084FC] rounded-lg text-left cursor-pointer transition hover:bg-[#F3E8FF] select-none" onclick="event.stopPropagation(); scrollToMessageId('${msg.replyToId}')">
+                            <p class="font-bold text-[10px] text-[#8B5CF6] flex items-center"><i class="fa-solid fa-reply mr-1.5 text-[8px]"></i>${msg.replyToSender === currentUser ? 'আপনি' : msg.replyToSender}</p>
+                            <p class="truncate text-[10px] text-slate-500 font-medium mt-0.5">${escapeHTML(msg.replyToText)}</p>
+                        </div>
+                    `;
+                }
+            }
+
+            // [Time Position Fix & Compact Resize]: Message paragraph has pr-5 and bubble card has pb-5/max-w-[70%]/min-w-[85px] to guarantee no overlap with the absolute timer and make bubbles smaller
+            const msgHTML = `
+                <div id="msg-${msgId}" class="flex ${isMe ? 'justify-end' : 'justify-start'} transition-all duration-300 rounded-[1.2rem] p-0.5">
+                    <div class="max-w-[70%]" onclick="openOptions('${msgId}', '${encodeURIComponent(msg.text || '')}', ${msg.timestamp}, ${isMe}, ${msg.deleted || false}, '${msg.sender}')">
+                        <div class="px-3.5 pt-2 pb-5 relative min-w-[85px] ${bubbleClass} cursor-pointer hover:opacity-95 transition-opacity">
+                            ${replyBlockHTML}
+                            <p class="break-words leading-relaxed text-[13px] font-medium pr-5">${formattedText}</p>
+                            ${msg.edited && !msg.deleted ? `<span class="text-[8px] absolute bottom-1 left-3.5 ${isMe ? 'text-purple-200' : 'text-slate-400'} italic">এডিটেড</span>` : ''}
+                            
+                            <!-- Premium positioned timestamp bottom right corner (completely safe) -->
+                            <div class="absolute bottom-0.5 right-3 flex items-center space-x-1 text-[8px] font-semibold opacity-90 select-none ${isMe ? 'text-white/90' : 'text-slate-400'}">
+                                <span>${timeStr}</span>
+                                ${seenStatusHTML}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            chatBox.insertAdjacentHTML('beforeend', msgHTML);
+        }
+
+        // --- Sending & Editing Action ---
+        function handleSend(event) {
+            event.preventDefault();
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            input.value = '';
+            input.style.height = 'auto';
+            input.focus(); // Retain keyboard focus on mobile browser after sending
+
+            isCurrentlyTypingInDB = false;
+            db.ref('typing/' + currentUser).set({ typing: false });
+
+            if (editModeActive && editingMessageId) {
+                db.ref('messages/' + editingMessageId).update({
+                    text: text,
+                    edited: true
+                }).then(() => {
+                    cancelEditMode();
+                });
+            } else {
+                const newMsg = {
+                    sender: currentUser,
+                    text: text,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    seen: false,
+                    deleted: false
+                };
+
+                // Add Reply references if reply mode is active
+                if (replyModeActive && replyingToMessageId) {
+                    newMsg.replyToId = replyingToMessageId;
+                    newMsg.replyToSender = replyingToSender;
+                    newMsg.replyToText = replyingToText;
+                }
+
+                db.ref('messages').push(newMsg).then(() => {
+                    if (replyModeActive) {
+                        cancelReplyMode();
+                    }
+                });
+            }
+        }
+
+        // --- Bottom Sheet Options Management ---
+        function openOptions(msgId, encodedText, timestamp, isMe, isDeleted, sender) {
+            if (isDeleted) return; 
+            selectedMessageId = msgId;
+            selectedMessageText = decodeURIComponent(encodedText);
+            selectedMessageTimestamp = timestamp;
+            selectedMessageSender = sender;
+
+            const now = Date.now();
+            const elapsed = now - timestamp;
+            const canModify = isMe && (elapsed < 180000); // 3 minutes limit 
+
+            const btnEdit = document.getElementById('btn-edit-msg');
+            const btnDeleteEveryone = document.getElementById('btn-delete-everyone');
+
+            if (canModify) {
+                btnEdit.classList.remove('hidden');
+                btnDeleteEveryone.classList.remove('hidden');
+            } else {
+                btnEdit.classList.add('hidden');
+                btnDeleteEveryone.classList.add('hidden');
+            }
+
+            const sheet = document.getElementById('bottom-sheet');
+            const container = sheet.querySelector('div');
+            sheet.classList.remove('opacity-0', 'pointer-events-none');
+            container.classList.remove('translate-y-full');
+        }
+
+        // Close Bottom Sheet
+        function closeBottomSheet() {
+            const sheet = document.getElementById('bottom-sheet');
+            const container = sheet.querySelector('div');
+            sheet.classList.add('opacity-0', 'pointer-events-none');
+            container.classList.add('translate-y-full');
+        }
+
+        // Reply Mode Trigger Function
+        function enableReplyMode() {
+            replyModeActive = true;
+            replyingToMessageId = selectedMessageId;
+            replyingToSender = selectedMessageSender;
+            replyingToText = selectedMessageText;
+
+            // Populate Reply Banner
+            document.getElementById('reply-banner-sender').innerText = `${replyingToSender === currentUser ? 'নিজের' : replyingToSender} মেসেজের উত্তর দিন`;
+            document.getElementById('reply-banner-text').innerText = replyingToText;
+            document.getElementById('reply-banner').classList.remove('hidden');
+
+            if (editModeActive) {
+                cancelEditMode();
+            }
+            closeBottomSheet();
+
+            const input = document.getElementById('message-input');
+            input.focus();
+        }
+
+        function cancelReplyMode() {
+            replyModeActive = false;
+            replyingToMessageId = null;
+            replyingToSender = null;
+            replyingToText = null;
+            document.getElementById('reply-banner').classList.add('hidden');
+        }
+
+        // Enable Edit Mode
+        function enableEditMode() {
+            editModeActive = true;
+            editingMessageId = selectedMessageId;
+
+            const input = document.getElementById('message-input');
+            input.value = selectedMessageText;
+            input.focus();
+            input.style.height = "auto";
+            input.style.height = (input.scrollHeight) + "px";
+
+            document.getElementById('edit-banner').classList.remove('hidden');
+            if (replyModeActive) {
+                cancelReplyMode();
+            }
+            closeBottomSheet();
+        }
+
+        function cancelEditMode() {
+            editModeActive = false;
+            editingMessageId = null;
+            const input = document.getElementById('message-input');
+            input.value = '';
+            input.style.height = 'auto';
+            document.getElementById('edit-banner').classList.add('hidden');
+            input.focus();
+        }
+
+        function deleteForEveryone() {
+            db.ref('messages/' + selectedMessageId).update({
+                text: "🚫 এই বার্তাটি মুছে ফেলা হয়েছে",
+                deleted: true
+            }).then(() => {
+                closeBottomSheet();
+            });
+        }
+
+        function deleteForMe() {
+            const localDeleted = JSON.parse(localStorage.getItem(`deleted_${currentUser}`) || '[]');
+            localDeleted.push(selectedMessageId);
+            localStorage.setItem(`deleted_${currentUser}`, JSON.stringify(localDeleted));
+            closeBottomSheet();
+            listenToMessages(); 
+        }
+
+        function logout() {
+            if (currentUser) {
+                // Set status to offline immediately upon logout
+                db.ref('status/' + currentUser).set({ 
+                    online: false, 
+                    last_active: firebase.database.ServerValue.TIMESTAMP 
+                });
+                db.ref('typing/' + currentUser).remove();
+            }
+            cleanupListeners();
+            currentUser = null;
+            otherUser = null;
+            isFirstLoad = true;
+            cancelReplyMode();
+            document.getElementById('login-code-input').value = '';
+            document.getElementById('setup-screen').classList.remove('opacity-0', 'pointer-events-none');
+        }
+
+        function scrollToBottom() {
+            const chatBox = document.getElementById('chat-box');
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+    </script>
+</body>
+</html>
