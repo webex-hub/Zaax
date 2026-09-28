@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sweet Memory: Couple Puzzle 💕</title>
+  <!-- PeerJS Serverless Multiplayer CDN -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: 'Fredoka', cursive, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #ffeef2, #e8dff5, #fce1e4);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      color: #444;
+    }
+
+    /* Lobby Screen */
+    #lobby {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #ffd1dc, #fcd5ce, #e8dff5);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      z-index: 100;
+    }
+
+    .lobby-card {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 28px 24px;
+      border-radius: 28px;
+      box-shadow: 0 15px 35px rgba(255, 120, 150, 0.25);
+      text-align: center;
+      width: 100%;
+      max-width: 320px;
+      border: 3px solid #ffccd5;
+    }
+
+    .lobby-card h1 {
+      color: #ff5376;
+      font-size: 24px;
+      margin-bottom: 6px;
+    }
+
+    .lobby-card p {
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+
+    .input-box {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid #ffccd5;
+      border-radius: 16px;
+      outline: none;
+      font-size: 15px;
+      margin-bottom: 12px;
+      text-align: center;
+      background: #fffdfd;
+    }
+    .input-box:focus {
+      border-color: #ff5376;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 16px;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-create {
+      background: #ff5376;
+      color: white;
+      box-shadow: 0 5px 15px rgba(255, 83, 118, 0.35);
+      margin-bottom: 10px;
+    }
+
+    .btn-join {
+      background: #9d84b7;
+      color: white;
+      box-shadow: 0 5px 15px rgba(157, 132, 183, 0.35);
+    }
+
+    .status-msg {
+      font-size: 13px;
+      color: #ff5376;
+      margin-top: 14px;
+      font-weight: 600;
+      min-height: 20px;
+      line-height: 1.4;
+    }
+
+    /* Game Interface */
+    #game-container {
+      display: none;
+      width: 100%;
+      max-width: 400px;
+      height: 100vh;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14px;
+    }
+
+    /* Fixed Clean Scoreboard */
+    .scoreboard {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      border-radius: 20px;
+      padding: 10px 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+      border: 2px solid #ffccd5;
+      gap: 8px;
+    }
+
+    .player-card {
+      text-align: center;
+      flex: 1;
+      padding: 6px 4px;
+      border-radius: 14px;
+      border: 2px solid transparent;
+      transition: all 0.25s ease;
+    }
+
+    .player-card.active-turn {
+      background: #fff0f3;
+      border-color: #ff5376;
+      box-shadow: 0 2px 10px rgba(255, 83, 118, 0.2);
+    }
+
+    .p-tag {
+      font-size: 11px;
+      color: #999;
+      margin-bottom: 2px;
+    }
+    .player-card.active-turn .p-tag {
+      color: #ff5376;
+      font-weight: 700;
+    }
+
+    .p-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #555;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 110px;
+      margin: 0 auto;
+    }
+
+    .p-score {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ff5376;
+      margin-top: 2px;
+    }
+
+    /* Turn Status Banner */
+    .turn-banner {
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      padding: 7px;
+      border-radius: 12px;
+      margin: 8px 0;
+      transition: all 0.3s;
+    }
+
+    /* 4x4 Memory Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-gap: 8px;
+      width: 100%;
+      aspect-ratio: 1;
+      margin: auto 0;
+    }
+
+    /* 3D Flip Card Effect */
+    .card {
+      perspective: 800px;
+      aspect-ratio: 1;
+      cursor: pointer;
+    }
+
+    .card-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      border-radius: 16px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+    }
+
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .card-front, .card-back {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 16px;
+      backface-visibility: hidden;
+    }
+
+    .card-back {
+      background: linear-gradient(135deg, #ff9a9e, #fecfef);
+      border: 2px solid #fff;
+      color: white;
+      font-size: 20px;
+    }
+
+    .card-front {
+      background: white;
+      border: 3px solid #ffccd5;
+      font-size: 28px;
+      transform: rotateY(180deg);
+    }
+
+    .card.matched .card-front {
+      background: #e8f5e9;
+      border-color: #81c784;
+    }
+
+    /* Floating Reactions Bar */
+    .reaction-bar {
+      display: flex;
+      justify-content: space-around;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 8px 12px;
+      border-radius: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      border: 1px solid #ffccd5;
+    }
+
+    .react-btn {
+      background: none;
+      border: none;
+      font-size: 22px;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .react-btn:active {
+      transform: scale(1.3);
+    }
+
+    /* Floating Emote Animation */
+    .floating-emote {
+      position: fixed;
+      font-size: 32px;
+      pointer-events: none;
+      animation: floatUp 1.6s forwards ease-out;
+      z-index: 200;
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0) scale(0.6); }
+      100% { opacity: 0; transform: translateY(-110px) scale(1.3); }
+    }
+
+    /* Win Modal */
+    #win-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 240, 245, 0.96);
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 24px;
+      z-index: 300;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOBBY SCREEN -->
+  <div id="lobby">
+    <div class="lobby-card">
+      <h1>Sweet Memory 🧩</h1>
+      <p>কার্ড উল্টে জোড়ায় জোড়ায় কাপল স্মৃতি মেলান!</p>
+
+      <input type="text" id="nickname" class="input-box" placeholder="আপনার মিষ্টি নাম" maxlength="8">
+      
+      <!-- 4 Digit custom code box -->
+      <input type="text" id="room-code" class="input-box" placeholder="পছন্দের ৪ ডিজিটের কোড (যেমন: 1234)" maxlength="4" inputmode="numeric">
+
+      <button class="btn btn-create" onclick="createRoom()">🏠 এই কোডে রুম বানান</button>
+      <button class="btn btn-join" onclick="joinRoom()">🔗 এই কোডে জয়েন করুন</button>
+
+      <div id="status" class="status-msg"></div>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="game-container">
+    <!-- Scoreboard: Left is always ME, Right is always PARTNER -->
+    <div class="scoreboard">
+      <div class="player-card" id="box-me">
+        <div class="p-tag">আপনি (You)</div>
+        <div class="p-name" id="name-me">Me</div>
+        <div class="p-score" id="score-me">0</div>
+      </div>
+
+      <div style="font-size: 22px;">💑</div>
+
+      <div class="player-card" id="box-partner">
+        <div class="p-tag">পার্টনার</div>
+        <div class="p-name" id="name-partner">Partner</div>
+        <div class="p-score" id="score-partner">0</div>
+      </div>
+    </div>
+
+    <!-- Turn Banner -->
+    <div class="turn-banner" id="turn-banner">কানেক্ট হচ্ছে...</div>
+
+    <!-- 4x4 Grid -->
+    <div class="grid" id="grid"></div>
+
+    <!-- Cute Reaction Bar -->
+    <div class="reaction-bar">
+      <button class="react-btn" onclick="sendReaction('💖')">💖</button>
+      <button class="react-btn" onclick="sendReaction('🫣')">🫣</button>
+      <button class="react-btn" onclick="sendReaction('🥺')">🥺</button>
+      <button class="react-btn" onclick="sendReaction('💋')">💋</button>
+      <button class="react-btn" onclick="sendReaction('🎉')">🎉</button>
+    </div>
+  </div>
+
+  <!-- WIN MODAL -->
+  <div id="win-modal">
+    <div style="font-size: 50px; margin-bottom: 10px;">🏆💕</div>
+    <h1 style="color: #ff3b6f; font-size: 26px;" id="win-title">খেলা শেষ!</h1>
+    <p style="color: #666; margin: 12px 0 24px; font-size: 14px;" id="win-desc">তোমরা সব স্মৃতি সফলভাবে মিলিয়ে ফেলেছো!</p>
+    <button class="btn btn-create" style="max-width: 200px;" onclick="restartGame()">আবার খেলুন 🔄</button>
+  </div>
+
+  <script>
+    const SWEET_ITEMS = ['💍', '💌', '🧸', '🍓', '☕', '✈️', '🍫', '🌸'];
+
+    let peer = null;
+    let conn = null;
+    let isHost = false;
+    let myRole = '';       // 'host' or 'guest'
+    let currentTurn = 'host'; // 'host' starts first
+
+    let myName = 'Me';
+    let partnerName = 'Partner';
+
+    let scores = { host: 0, guest: 0 };
+    let cardsData = []; 
+    let flippedCards = []; 
+    let matchedIndices = new Set();
+    let lockBoard = false;
+
+    function setStatus(text) {
+      document.getElementById('status').innerText = text;
+    }
+
+    // --- PeerJS Connection with Custom 4-Digit Code ---
+    function createRoom() {
+      const code = document.getElementById('room-code').value.trim();
+      if (!code || code.length !== 4) {
+        return setStatus('দয়া করে ঠিক ৪ ডিজিটের কোড দিন (যেমন: 2024)!');
+      }
+
+      myName = document.getElementById('nickname').value.trim() || 'Honey 🐰';
+      setStatus('রুম তৈরি হচ্ছে...');
+
+      // Peer ID prefix to prevent collision with other apps
+      peer = new Peer('cpl-mem-' + code);
+
+      peer.on('open', () => {
+        isHost = true;
+        myRole = 'host';
+        setStatus(`রুম তৈরি হয়েছে! কোড: ${code}\nপার্টনারকে একই কোড দিয়ে জয়েন করতে বলুন 💕`);
+      });
+
+      peer.on('connection', (c) => {
+        conn = c;
+        setupNetworking();
+      });
+
+      peer.on('error', (err) => {
+        if (err.type === 'unavailable-id') {
+          setStatus('এই কোডটি অন্য কেউ ব্যবহার করছে! অন্য ৪ ডিজিট দিন।');
+        } else {
+          setStatus('সমস্যা হয়েছে, অনুগ্রহ করে আবার চেষ্টা করুন।');
+        }
+      });
+    }
+
+    function joinRoom() {
+      const code = document.getElementById('room-code').value.trim();
+      if (!code || code.length !== 4) {
+        return setStatus('দয়া করে হোস্টের দেওয়া ৪ ডিজিটের কোড লিখুন!');
+      }
+
+      myName = document.getElementById('nickname').value.trim() || 'Sweetie 🐻';
+      setStatus('রুম খোঁজা হচ্ছে...');
+
+      peer = new Peer();
+
+      peer.on('open', () => {
+        conn = peer.connect('cpl-mem-' + code);
+        isHost = false;
+        myRole = 'guest';
+        setupNetworking();
+      });
+
+      peer.on('error', () => {
+        setStatus('রুমে ঢোকা যায়নি! কোডটি ঠিক আছে তো?');
+      });
+    }
+
+    function setupNetworking() {
+      conn.on('open', () => {
+        // Exchange Names
+        conn.send({ type: 'handshake', name: myName });
+
+        if (isHost) {
+          initGameBoard();
+        }
+      });
+
+      conn.on('data', (data) => {
+        handleNetworkData(data);
+      });
+    }
+
+    function handleNetworkData(data) {
+      if (data.type === 'handshake') {
+        partnerName = data.name;
+        document.getElementById('lobby').style.display = 'none';
+        document.getElementById('game-container').style.display = 'flex';
+        updateNamesUI();
+
+        if (!isHost) {
+          conn.send({ type: 'handshake_reply', name: myName });
+        }
+      } else if (data.type === 'handshake_reply') {
+        partnerName = data.name;
+        document.getElementById('lobby').style.display = 'none';
+        document.getElementById('game-container').style.display = 'flex';
+        updateNamesUI();
+      } else if (data.type === 'init_cards') {
+        cardsData = data.cards;
+        matchedIndices.clear();
+        scores = { host: 0, guest: 0 };
+        currentTurn = 'host';
+        renderGrid();
+        updateUI();
+      } else if (data.type === 'card_flip') {
+        executeCardFlip(data.index, false);
+      } else if (data.type === 'reaction') {
+        showFloatingEmote(data.emoji, window.innerWidth * 0.7);
+      } else if (data.type === 'restart') {
+        if (isHost) initGameBoard();
+      }
+    }
+
+    function updateNamesUI() {
+      // Left is ALWAYS Me, Right is ALWAYS Partner
+      document.getElementById('name-me').innerText = myName;
+      document.getElementById('name-partner').innerText = partnerName;
+    }
+
+    // --- Game Logic ---
+    function initGameBoard() {
+      // Shuffle 8 pairs (16 cards)
+      const deck = [...SWEET_ITEMS, ...SWEET_ITEMS];
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+      cardsData = deck;
+      matchedIndices.clear();
+      scores = { host: 0, guest: 0 };
+      currentTurn = 'host';
+
+      renderGrid();
+      updateUI();
+
+      if (conn && conn.open) {
+        conn.send({ type: 'init_cards', cards: cardsData });
+      }
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+
+      cardsData.forEach((icon, idx) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.id = `card-${idx}`;
+        card.onclick = () => onCardClicked(idx);
+
+        card.innerHTML = `
+          <div class="card-inner">
+            <div class="card-back">💕</div>
+            <div class="card-front">${icon}</div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+      document.getElementById('win-modal').style.display = 'none';
+    }
+
+    function onCardClicked(index) {
+      if (lockBoard) return;
+      if (currentTurn !== myRole) return; // Not your turn!
+      if (flippedCards.includes(index) || matchedIndices.has(index)) return;
+
+      executeCardFlip(index, true);
+    }
+
+    function executeCardFlip(index, broadcast) {
+      if (broadcast && conn) {
+        conn.send({ type: 'card_flip', index });
+      }
+
+      const cardEl = document.getElementById(`card-${index}`);
+      if (cardEl) cardEl.classList.add('flipped');
+      flippedCards.push(index);
+
+      if (flippedCards.length === 2) {
+        lockBoard = true;
+        checkMatch();
+      }
+    }
+
+    function checkMatch() {
+      const [idx1, idx2] = flippedCards;
+      const isMatch = (cardsData[idx1] === cardsData[idx2]);
+
+      setTimeout(() => {
+        if (isMatch) {
+          document.getElementById(`card-${idx1}`).classList.add('matched');
+          document.getElementById(`card-${idx2}`).classList.add('matched');
+          matchedIndices.add(idx1);
+          matchedIndices.add(idx2);
+
+          // Add score to whoever's turn it was
+          scores[currentTurn]++;
+          showFloatingEmote('✨ Pair! ✨', window.innerWidth / 2);
+
+          if (matchedIndices.size === cardsData.length) {
+            handleGameOver();
+          }
+          // Matching grants another consecutive turn!
+        } else {
+          document.getElementById(`card-${idx1}`).classList.remove('flipped');
+          document.getElementById(`card-${idx2}`).classList.remove('flipped');
+          // Switch turn
+          currentTurn = (currentTurn === 'host' ? 'guest' : 'host');
+        }
+
+        flippedCards = [];
+        lockBoard = false;
+        updateUI();
+      }, 950);
+    }
+
+    // --- Scoreboard & UI Sync Fix ---
+    function updateUI() {
+      // Correct Mapping:
+      // 'myRole' is either 'host' or 'guest'
+      // 'partnerRole' is the opposite
+      const partnerRole = (myRole === 'host') ? 'guest' : 'host';
+
+      // Scores
+      document.getElementById('score-me').innerText = scores[myRole];
+      document.getElementById('score-partner').innerText = scores[partnerRole];
+
+      // Highlight Active Turn Box
+      const isMyTurn = (currentTurn === myRole);
+      document.getElementById('box-me').classList.toggle('active-turn', isMyTurn);
+      document.getElementById('box-partner').classList.toggle('active-turn', !isMyTurn);
+
+      // Turn Banner text
+      const banner = document.getElementById('turn-banner');
+      if (isMyTurn) {
+        banner.innerText = '🌸 আপনার চাল (Your Turn) 💕';
+        banner.style.background = '#e8f5e9';
+        banner.style.color = '#2e7d32';
+      } else {
+        banner.innerText = `⏳ ${partnerName}-এর চাল... অপেক্ষা করুন`;
+        banner.style.background = '#ffecf0';
+        banner.style.color = '#ff3b6f';
+      }
+    }
+
+    function handleGameOver() {
+      const winModal = document.getElementById('win-modal');
+      const winTitle = document.getElementById('win-title');
+      const winDesc = document.getElementById('win-desc');
+
+      winModal.style.display = 'flex';
+      const myScore = scores[myRole];
+      const partnerRole = (myRole === 'host') ? 'guest' : 'host';
+      const partnerScore = scores[partnerRole];
+
+      if (myScore > partnerScore) {
+        winTitle.innerText = 'আপনি জিতেছেন! 💖';
+        winDesc.innerText = `${myName} বেশি স্মৃতি খুঁজে পেয়েছে! পার্টনারকে একটি মিষ্টি হাগ দিন 🤗`;
+      } else if (myScore < partnerScore) {
+        winTitle.innerText = `${partnerName} জিতেছে! 🏆`;
+        winDesc.innerText = `দারুণ খেলেছো তোমরা দুজন! এখন পার্টনারের যেকোনো একটি মিষ্টি আবদার পূরণ করুন 💕`;
+      } else {
+        winTitle.innerText = 'ইটস আ টাই! 💑';
+        winDesc.innerText = 'তোমাদের ভালোবাসা এবং স্মৃতিশক্তি একদম সমান সমান!';
+      }
+    }
+
+    function restartGame() {
+      if (isHost) {
+        initGameBoard();
+      } else if (conn) {
+        conn.send({ type: 'restart' });
+      }
+    }
+
+    // --- Reaction System ---
+    function sendReaction(emoji) {
+      showFloatingEmote(emoji, window.innerWidth * 0.3);
+      if (conn) conn.send({ type: 'reaction', emoji });
+    }
+
+    function showFloatingEmote(emoji, posX) {
+      const el = document.createElement('div');
+      el.className = 'floating-emote';
+      el.innerText = emoji;
+      el.style.left = `${posX || Math.random() * (window.innerWidth - 60)}px`;
+      el.style.bottom = '110px';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1600);
+    }
+  </script>
+</body>
+</html>

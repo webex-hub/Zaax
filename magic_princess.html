@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>✨ Magic Star Princess ✨</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #f8e8f8;
+      font-family: 'Comic Sans MS', 'Quicksand', 'Nunito', cursive, sans-serif;
+    }
+    #game-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(180deg, #ffd1dc 0%, #e2b4f5 50%, #b8c0ff 100%);
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    /* UI Overlays */
+    .screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: rgba(255, 230, 245, 0.88);
+      backdrop-filter: blur(8px);
+      z-index: 10;
+      transition: opacity 0.3s ease;
+      text-align: center;
+      padding: 24px;
+    }
+    .hidden {
+      display: none !important;
+    }
+    h1 {
+      font-size: 2.2rem;
+      color: #ff4081;
+      text-shadow: 2px 2px 0px #ffffff, 0 0 15px #ff80ab;
+      margin-bottom: 8px;
+    }
+    p {
+      color: #6a1b9a;
+      font-size: 1rem;
+      margin-bottom: 20px;
+    }
+    .btn {
+      background: linear-gradient(135deg, #ff4081, #b388ff);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 14px 38px;
+      font-size: 1.25rem;
+      font-weight: bold;
+      box-shadow: 0 6px 16px rgba(255, 64, 129, 0.4);
+      cursor: pointer;
+      outline: none;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+      margin-top: 10px;
+    }
+    .btn:active {
+      transform: scale(0.95);
+      box-shadow: 0 3px 8px rgba(255, 64, 129, 0.3);
+    }
+    /* Wardrobe Picker */
+    .picker-box {
+      background: #ffffff99;
+      border-radius: 20px;
+      padding: 12px;
+      margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .color-options {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+    .color-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      cursor: pointer;
+    }
+    .color-circle.active {
+      transform: scale(1.15);
+      border-color: #ff4081;
+    }
+    /* HUD */
+    #hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: env(safe-area-inset-top, 16px) 16px 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 5;
+      pointer-events: none;
+    }
+    .hud-card {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(4px);
+      border-radius: 20px;
+      padding: 6px 14px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #7b1fa2;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    #fever-bar-container {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      max-width: 250px;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 10px;
+      overflow: hidden;
+      z-index: 5;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    #fever-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #ff80ab, #ffd54f, #80d8ff);
+      transition: width 0.15s ease;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Top Heads-Up Display -->
+    <div id="hud">
+      <div class="hud-card" id="hud-score">⭐ 0</div>
+      <div class="hud-card" id="hud-lives">💖 💖 💖</div>
+    </div>
+
+    <!-- Fever Meter -->
+    <div id="fever-bar-container">
+      <div id="fever-bar"></div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="screen">
+      <h1>✨ Magic Princess ✨</h1>
+      <p>Catch stars, gems & hearts!<br>Slide finger anywhere to glide 💖</p>
+
+      <div class="picker-box">
+        <span style="font-size:0.9rem; font-weight:bold; color:#7b1fa2;">Pick Your Dress Color:</span>
+        <div class="color-options">
+          <div class="color-circle active" style="background:#ff4081;" onclick="setDressColor('#ff4081')"></div>
+          <div class="color-circle" style="background:#ba68c8;" onclick="setDressColor('#ba68c8')"></div>
+          <div class="color-circle" style="background:#4dd0e1;" onclick="setDressColor('#4dd0e1')"></div>
+          <div class="color-circle" style="background:#ffb74d;" onclick="setDressColor('#ffb74d')"></div>
+        </div>
+      </div>
+
+      <button class="btn" onclick="startGame()">TAP TO PLAY ✨</button>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="screen hidden">
+      <h1 style="color:#d81b60;">Oh no! 💕</h1>
+      <p id="game-over-score">Your Score: 0</p>
+      <p id="game-over-best" style="font-weight: bold; margin-top:-10px; color:#ff4081;">Best Score: 0</p>
+      <button class="btn" onclick="restartGame()">PLAY AGAIN 🌸</button>
+    </div>
+  </div>
+
+  <script>
+    /* ============================================================
+       AUDIO SYNTHESIZER (Web Audio API - No External Sounds Needed)
+       ============================================================ */
+    let audioCtx = null;
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playTone(freq, type = 'sine', duration = 0.15, vol = 0.25) {
+      if (!audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch(e) {}
+    }
+
+    function soundCatchStar() {
+      initAudio();
+      playTone(659.25, 'triangle', 0.12, 0.2); // E5
+      setTimeout(() => playTone(987.77, 'sine', 0.2, 0.2), 60); // B5
+    }
+
+    function soundCatchHeart() {
+      initAudio();
+      playTone(523.25, 'sine', 0.1, 0.25); // C5
+      setTimeout(() => playTone(783.99, 'sine', 0.25, 0.25), 80); // G5
+    }
+
+    function soundHitObstacle() {
+      initAudio();
+      playTone(180, 'sawtooth', 0.2, 0.3);
+      if (navigator.vibrate) navigator.vibrate(80);
+    }
+
+    function soundFever() {
+      initAudio();
+      [400, 500, 600, 800, 1000].forEach((f, i) => {
+        setTimeout(() => playTone(f, 'triangle', 0.15, 0.2), i * 50);
+      });
+    }
+
+    /* ============================================================
+       GAME ENGINE & LOGIC
+       ============================================================ */
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let width = 0;
+    let height = 0;
+    let dressColor = '#ff4081';
+
+    function setDressColor(color) {
+      dressColor = color;
+      document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // High Score
+    let highScore = localStorage.getItem('magic_girl_highscore') || 0;
+
+    // Game state
+    let state = 'START';
+    let score = 0;
+    let lives = 3;
+    let feverPoints = 0;
+    let isFever = false;
+    let feverTimer = 0;
+
+    // Player
+    const player = {
+      x: 0,
+      y: 0,
+      targetX: 0,
+      radius: 35,
+      wingWingAngle: 0
+    };
+
+    // Items and Particles
+    let items = [];
+    let particles = [];
+    let clouds = [];
+    let sparkleBackground = [];
+
+    // Background floating twinkles
+    for (let i = 0; i < 30; i++) {
+      sparkleBackground.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        size: Math.random() * 3 + 1,
+        speed: Math.random() * 0.5 + 0.2,
+        alpha: Math.random()
+      });
+    }
+
+    // Touch controls - relative dragging so thumbs don't block the screen
+    let isTouching = false;
+    let lastTouchX = 0;
+
+    window.addEventListener('touchstart', (e) => {
+      isTouching = true;
+      lastTouchX = e.touches[0].clientX;
+      initAudio();
+    }, { passive: false });
+
+    window.addEventListener('touchmove', (e) => {
+      if (!isTouching || state !== 'PLAYING') return;
+      const currentX = e.touches[0].clientX;
+      const deltaX = currentX - lastTouchX;
+      player.targetX += deltaX * 1.25; // Responsive smooth dragging
+      lastTouchX = currentX;
+      e.preventDefault();
+    }, { passive: false });
+
+    window.addEventListener('touchend', () => {
+      isTouching = false;
+    });
+
+    // Fallback Mouse controls for testing in desktop preview
+    let isMouseDown = false;
+    window.addEventListener('mousedown', (e) => {
+      isMouseDown = true;
+      lastTouchX = e.clientX;
+      initAudio();
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!isMouseDown || state !== 'PLAYING') return;
+      const deltaX = e.clientX - lastTouchX;
+      player.targetX += deltaX * 1.2;
+      lastTouchX = e.clientX;
+    });
+    window.addEventListener('mouseup', () => { isMouseDown = false; });
+
+    // Item Types
+    const ITEM_TYPES = [
+      { emoji: '⭐', type: 'star', points: 15, weight: 40 },
+      { emoji: '💖', type: 'heart', points: 25, weight: 25 },
+      { emoji: '🧁', type: 'cupcake', points: 50, weight: 15 },
+      { emoji: '💎', type: 'gem', points: 40, weight: 15 },
+      { emoji: '🌧️', type: 'storm', points: 0, weight: 20, isHazard: true }
+    ];
+
+    function spawnItem() {
+      // Pick random item based on weight
+      const totalWeight = ITEM_TYPES.reduce((acc, i) => acc + i.weight, 0);
+      let rand = Math.random() * totalWeight;
+      let selected = ITEM_TYPES[0];
+
+      for (let item of ITEM_TYPES) {
+        if (rand < item.weight) {
+          selected = item;
+          break;
+        }
+        rand -= item.weight;
+      }
+
+      // In Fever mode, no storm hazards spawn!
+      if (isFever && selected.isHazard) {
+        selected = ITEM_TYPES[0]; // Convert into Star
+      }
+
+      items.push({
+        x: Math.random() * (width - 60) + 30,
+        y: -40,
+        speed: Math.random() * 2 + (isFever ? 4.5 : 2.8),
+        emoji: selected.emoji,
+        type: selected.type,
+        points: selected.points,
+        isHazard: selected.isHazard || false,
+        size: 38,
+        wiggle: Math.random() * Math.PI * 2
+      });
+    }
+
+    function createExplosion(x, y, color = '#ff80ab', count = 12) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 4 + 2;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          size: Math.random() * 5 + 3,
+          color: color,
+          alpha: 1,
+          decay: Math.random() * 0.02 + 0.02
+        });
+      }
+    }
+
+    function createSparkleText(x, y, text, color = '#ff4081') {
+      particles.push({
+        x, y,
+        vx: 0,
+        vy: -1.5,
+        text: text,
+        color: color,
+        alpha: 1,
+        decay: 0.025,
+        isText: true
+      });
+    }
+
+    function resetGame() {
+      score = 0;
+      lives = 3;
+      feverPoints = 0;
+      isFever = false;
+      feverTimer = 0;
+      items = [];
+      particles = [];
+      player.x = width / 2;
+      player.targetX = width / 2;
+      player.y = height - 120;
+      updateHUD();
+    }
+
+    function startGame() {
+      initAudio();
+      document.getElementById('start-screen').classList.add('hidden');
+      document.getElementById('game-over-screen').classList.add('hidden');
+      resetGame();
+      state = 'PLAYING';
+    }
+
+    function restartGame() {
+      startGame();
+    }
+
+    function gameOver() {
+      state = 'GAMEOVER';
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('magic_girl_highscore', highScore);
+      }
+      document.getElementById('game-over-score').innerText = `Your Score: ${score} 🌟`;
+      document.getElementById('game-over-best').innerText = `Best Score: ${highScore} 👑`;
+      document.getElementById('game-over-screen').classList.remove('hidden');
+    }
+
+    function updateHUD() {
+      document.getElementById('hud-score').innerText = `⭐ ${score}`;
+      let hearts = '';
+      for (let i = 0; i < lives; i++) hearts += '💖 ';
+      document.getElementById('hud-lives').innerText = hearts || '💔';
+      document.getElementById('fever-bar').style.width = `${Math.min(100, (feverPoints / 100) * 100)}%`;
+    }
+
+    /* ============================================================
+       DRAWING FUNCTIONS (Cute Chibi Girl & Magical Pastel Visuals)
+       ============================================================ */
+    function drawCharacter(x, y) {
+      ctx.save();
+      ctx.translate(x, y);
+
+      player.wingWingAngle += 0.1;
+      const wingFlap = Math.sin(player.wingWingAngle) * 6;
+
+      // 1. Fairy Wings
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.beginPath();
+      // Left wing
+      ctx.ellipse(-26, -10 + wingFlap * 0.2, 18, 10, -Math.PI / 4, 0, Math.PI * 2);
+      // Right wing
+      ctx.ellipse(26, -10 + wingFlap * 0.2, 18, 10, Math.PI / 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 2. Princess Dress (Pastel Bell Skirt)
+      ctx.fillStyle = dressColor;
+      ctx.beginPath();
+      ctx.moveTo(-20, 25);
+      ctx.quadraticCurveTo(0, 15, 20, 25);
+      ctx.lineTo(14, 0);
+      ctx.lineTo(-14, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      // Dress lace hem
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(-14, 25, 4, 0, Math.PI * 2);
+      ctx.arc(-7, 26, 4, 0, Math.PI * 2);
+      ctx.arc(0, 26, 4, 0, Math.PI * 2);
+      ctx.arc(7, 26, 4, 0, Math.PI * 2);
+      ctx.arc(14, 25, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 3. Cute Chibi Head
+      ctx.fillStyle = '#ffe0bd'; // Soft skin tone
+      ctx.beginPath();
+      ctx.arc(0, -10, 20, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Cute Blushing Cheeks
+      ctx.fillStyle = '#ff80ab88';
+      ctx.beginPath();
+      ctx.arc(-10, -5, 4.5, 0, Math.PI * 2);
+      ctx.arc(10, -5, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Big Sparkly Anime Eyes
+      ctx.fillStyle = '#4a148c';
+      ctx.beginPath();
+      ctx.arc(-7, -11, 3.5, 0, Math.PI * 2);
+      ctx.arc(7, -11, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eye White Sparkle
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(-8, -12, 1.3, 0, Math.PI * 2);
+      ctx.arc(6, -12, 1.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Sweet Smile
+      ctx.strokeStyle = '#d81b60';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(0, -6, 4, 0.2, Math.PI - 0.2);
+      ctx.stroke();
+
+      // Hair (Bangs & Twintails)
+      ctx.fillStyle = '#8d5b4c'; // Cute honey brown hair
+      ctx.beginPath();
+      ctx.arc(0, -18, 16, Math.PI, 0); // Hair dome
+      ctx.fill();
+      // Little Side Tufts
+      ctx.beginPath();
+      ctx.arc(-18, -14, 8, 0, Math.PI * 2);
+      ctx.arc(18, -14, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Golden Princess Tiara
+      ctx.fillStyle = '#ffd700';
+      ctx.beginPath();
+      ctx.moveTo(-10, -25);
+      ctx.lineTo(-5, -28);
+      ctx.lineTo(0, -32);
+      ctx.lineTo(5, -28);
+      ctx.lineTo(10, -25);
+      ctx.lineTo(0, -23);
+      ctx.closePath();
+      ctx.fill();
+
+      // Little Gem on Tiara
+      ctx.fillStyle = '#ff4081';
+      ctx.beginPath();
+      ctx.arc(0, -26, 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Wand holding sparkle
+      ctx.font = '18px serif';
+      ctx.fillText('🪄', 16, 8);
+
+      ctx.restore();
+    }
+
+    /* ============================================================
+       MAIN GAME LOOP
+       ============================================================ */
+    let spawnTimer = 0;
+
+    function gameLoop() {
+      // 1. Update Canvas & Background
+      ctx.clearRect(0, 0, width, height);
+
+      // Dynamic rainbow background during fever
+      if (isFever) {
+        const time = Date.now() * 0.003;
+        const r = Math.sin(time) * 30 + 225;
+        const g = Math.sin(time + 2) * 30 + 200;
+        const b = Math.sin(time + 4) * 30 + 235;
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.fillRect(0, 0, width, height);
+      }
+
+      // Background Sparkles
+      sparkleBackground.forEach(sp => {
+        sp.y -= sp.speed;
+        if (sp.y < 0) sp.y = height;
+        ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(Math.sin(Date.now() * 0.002 + sp.alpha))})`;
+        ctx.beginPath();
+        ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      if (state === 'PLAYING') {
+        // Fever Mode management
+        if (isFever) {
+          feverTimer--;
+          feverPoints = (feverTimer / 360) * 100;
+          if (feverTimer <= 0) {
+            isFever = false;
+            feverPoints = 0;
+          }
+          updateHUD();
+        }
+
+        // Smooth movement interpolation
+        player.x += (player.targetX - player.x) * 0.2;
+        // Keep character inside bounds
+        if (player.x < 35) player.x = 35;
+        if (player.x > width - 35) player.x = width - 35;
+        if (player.targetX < 35) player.targetX = 35;
+        if (player.targetX > width - 35) player.targetX = width - 35;
+
+        // Spawn Items
+        spawnTimer++;
+        const currentInterval = isFever ? 18 : 34;
+        if (spawnTimer % currentInterval === 0) {
+          spawnItem();
+        }
+
+        // Update & Render Items
+        for (let i = items.length - 1; i >= 0; i--) {
+          const item = items[i];
+          item.y += item.speed;
+          item.wiggle += 0.05;
+          const drawX = item.x + Math.sin(item.wiggle) * 8;
+
+          // Render Item Emoji
+          ctx.font = `${item.size}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(item.emoji, drawX, item.y);
+
+          // Collision Detection with Princess
+          const dist = Math.hypot(player.x - drawX, player.y - item.y);
+          if (dist < player.radius + 18) {
+            if (item.isHazard) {
+              soundHitObstacle();
+              createExplosion(drawX, item.y, '#9e9e9e', 14);
+              lives--;
+              updateHUD();
+              if (lives <= 0) {
+                gameOver();
+              }
+            } else {
+              // Caught treat/star!
+              if (item.type === 'heart') soundCatchHeart();
+              else soundCatchStar();
+
+              createExplosion(drawX, item.y, item.type === 'heart' ? '#ff4081' : '#ffd54f', 12);
+              createSparkleText(drawX, item.y - 15, `+${item.points}`);
+
+              score += item.points;
+              if (!isFever) {
+                feverPoints += 12;
+                if (feverPoints >= 100) {
+                  isFever = true;
+                  feverTimer = 360; // 6 seconds at 60fps
+                  soundFever();
+                }
+              }
+              updateHUD();
+            }
+            items.splice(i, 1);
+            continue;
+          }
+
+          // Offscreen removal
+          if (item.y > height + 50) {
+            items.splice(i, 1);
+          }
+        }
+      }
+
+      // Draw Princess Character
+      drawCharacter(player.x, player.y);
+
+      // Render Floating Particles & Text
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= p.decay;
+
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        if (p.isText) {
+          ctx.font = 'bold 20px "Comic Sans MS", Quicksand, cursive';
+          ctx.fillStyle = p.color;
+          ctx.textAlign = 'center';
+          ctx.fillText(p.text, p.x, p.y);
+        } else {
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Initialize character position
+    player.x = window.innerWidth / 2;
+    player.targetX = window.innerWidth / 2;
+    player.y = window.innerHeight - 120;
+
+    // Start running loop
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
