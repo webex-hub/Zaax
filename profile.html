@@ -65,7 +65,7 @@
 
             <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
-                    <input type="password" id="login-code-input" placeholder="কোড লিখুন... (যেমন: rhd বা zrr)" class="w-full bg-white/90 border-2 border-[#EADDF3] focus:border-[#C084FC] rounded-2xl px-4 py-3.5 focus:outline-none text-center text-sm font-semibold placeholder:text-slate-300 transition">
+                    <input type="password" id="login-code-input" placeholder="Email লিখুন যেমন (name@gmail.com)" class="w-full bg-white/90 border-2 border-[#EADDF3] focus:border-[#C084FC] rounded-2xl px-4 py-3.5 focus:outline-none text-center text-sm font-semibold placeholder:text-slate-300 transition">
                 </div>
                 <p id="login-error" class="hidden text-xs text-rose-500 font-semibold text-center"><i class="fa-solid fa-circle-exclamation mr-1"></i> Wrong Code! Try agin 🌸</p>
                 <button type="submit" class="w-full py-3.5 bg-[#A78BFA] hover:bg-[#8B5CF6] text-white font-bold rounded-2xl shadow-md transition duration-200 active:scale-95 text-sm">
@@ -318,7 +318,7 @@
                 if (snapshot.exists()) {
                     const status = snapshot.val();
                     if (status.online) {
-                        statusText.innerText = "অনলাইন 🟢";
+                        statusText.innerText = "Online 🟢";
                         dot.className = "absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-white";
                     } else {
                         const lastSeenTime = formatLastSeen(status.last_active);
@@ -326,7 +326,7 @@
                         dot.className = "absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-slate-300 rounded-full border-2 border-white";
                     }
                 } else {
-                    statusText.innerText = "অফলাইন";
+                    statusText.innerText = "Offline";
                     dot.className = "absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-slate-300 rounded-full border-2 border-white";
                 }
             });
@@ -456,7 +456,7 @@
                     <div id="load-more-container" class="flex justify-center my-3">
                         <div class="text-[10px] bg-white/90 text-[#8B5CF6] px-4 py-2 rounded-full font-bold border border-[#E9D5FF] shadow-xs flex items-center space-x-1.5 animate-pulse">
                             <i class="fa-solid fa-spinner animate-spin"></i>
-                            <span>পুরোনো বার্তা লোড হচ্ছে...</span>
+                            <span>পুরোনো মেসেজ লোড হচ্ছে...</span>
                         </div>
                     </div>
                 `;
@@ -465,7 +465,7 @@
                 hasMoreMessages = false;
                 const startHTML = `
                     <div class="text-center text-[10px] text-[#FF8FAB] font-semibold py-1.5 px-4 bg-white/70 rounded-full max-w-xs mx-auto border-2 border-[#FFE5EC] shadow-sm mb-4">
-                        🌸 চ্যাটের শুরু থেকে 🌸
+                        🌸 No more chat here 🌸
                     </div>
                 `;
                 chatBox.insertAdjacentHTML('beforeend', startHTML);
@@ -588,9 +588,9 @@
             let seenStatusHTML = '';
             if (isMe && !msg.deleted) {
                 if (msg.seen) {
-                    seenStatusHTML = `<span class="text-[9px] text-pink-200 font-bold ml-1">💖💖</span>`;
+                    seenStatusHTML = `<span class="text-[9px] text-pink-200 font-bold ml-1">❤️‍🔥</span>`;
                 } else {
-                    seenStatusHTML = `<span class="text-[9px] text-white/50 ml-1">🤍</span>`;
+                    seenStatusHTML = `<span class="text-[9px] text-white/50 ml-1">💔</span>`;
                 }
             }
 
@@ -609,14 +609,14 @@
                 if (isMe) {
                     replyBlockHTML = `
                         <div class="mb-2 p-2 bg-white/10 border-l-2 border-pink-200 rounded-lg text-left cursor-pointer transition hover:bg-white/15 select-none" onclick="event.stopPropagation(); scrollToMessageId('${msg.replyToId}')">
-                            <p class="font-bold text-[10px] text-pink-200 flex items-center"><i class="fa-solid fa-reply mr-1.5 text-[8px]"></i>${msg.replyToSender === currentUser ? 'আপনি' : msg.replyToSender}</p>
+                            <p class="font-bold text-[10px] text-pink-200 flex items-center"><i class="fa-solid fa-reply mr-1.5 text-[8px]"></i>${msg.replyToSender === currentUser ? 'You' : msg.replyToSender}</p>
                             <p class="truncate text-[10px] text-white/95 font-medium mt-0.5">${escapeHTML(msg.replyToText)}</p>
                         </div>
                     `;
                 } else {
                     replyBlockHTML = `
                         <div class="mb-2 p-2 bg-[#F9F6FC] border-l-2 border-[#C084FC] rounded-lg text-left cursor-pointer transition hover:bg-[#F3E8FF] select-none" onclick="event.stopPropagation(); scrollToMessageId('${msg.replyToId}')">
-                            <p class="font-bold text-[10px] text-[#8B5CF6] flex items-center"><i class="fa-solid fa-reply mr-1.5 text-[8px]"></i>${msg.replyToSender === currentUser ? 'আপনি' : msg.replyToSender}</p>
+                            <p class="font-bold text-[10px] text-[#8B5CF6] flex items-center"><i class="fa-solid fa-reply mr-1.5 text-[8px]"></i>${msg.replyToSender === currentUser ? 'You' : msg.replyToSender}</p>
                             <p class="truncate text-[10px] text-slate-500 font-medium mt-0.5">${escapeHTML(msg.replyToText)}</p>
                         </div>
                     `;
@@ -630,7 +630,7 @@
                         <div class="px-3.5 pt-2 pb-5 relative min-w-[85px] ${bubbleClass} cursor-pointer hover:opacity-95 transition-opacity">
                             ${replyBlockHTML}
                             <p class="break-words leading-relaxed text-[13px] font-medium pr-5">${formattedText}</p>
-                            ${msg.edited && !msg.deleted ? `<span class="text-[8px] absolute bottom-1 left-3.5 ${isMe ? 'text-purple-200' : 'text-slate-400'} italic">এডিটেড</span>` : ''}
+                            ${msg.edited && !msg.deleted ? `<span class="text-[8px] absolute bottom-1 left-3.5 ${isMe ? 'text-purple-200' : 'text-slate-400'} italic">Edited</span>` : ''}
                             
                             <!-- Premium positioned timestamp bottom right corner (completely safe) -->
                             <div class="absolute bottom-0.5 right-3 flex items-center space-x-1 text-[8px] font-semibold opacity-90 select-none ${isMe ? 'text-white/90' : 'text-slate-400'}">
@@ -785,7 +785,7 @@
 
         function deleteForEveryone() {
             db.ref('messages/' + selectedMessageId).update({
-                text: "🚫 এই বার্তাটি মুছে ফেলা হয়েছে",
+                text: "🚫 This message deleted",
                 deleted: true
             }).then(() => {
                 closeBottomSheet();
